@@ -14,7 +14,7 @@ app.use(express.json());
 require('dotenv').config(); 
 
 /* ── MongoDB ── */
-const uri    = 'mongodb://localhost:27017/avis_de_retard';
+const uri    = process.env.DB;
 const mongo  = new MongoClient(uri);
 let clientsCol, trucksCol;
 
