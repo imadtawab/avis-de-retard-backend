@@ -14,7 +14,7 @@ app.use(express.json());
 require('dotenv').config(); 
 
 /* ── MongoDB ── */
-const uri    = 'mongodb://localhost:27017/avis_de_retard';
+const uri    = process.env.DB;
 const mongo  = new MongoClient(uri);
 let clientsCol, trucksCol;
 
@@ -101,7 +101,7 @@ app.post('/api/clients/new', async (req, res) => {
      matricule: string,
      clientIds: ObjectId[]   ← relation par référence (normalisée)
    }
-
+    
    Les données complètes des clients sont résolues via populate
    à la lecture (GET /api/trucks).
 ───────────────────────────────────────────── */
@@ -111,27 +111,35 @@ app.get('/api/trucks', async (req, res) => {
   try {
     const trucks = await trucksCol.find({}).toArray();
 
-    /* Populate : résoudre les clientIds en objets complets */
     const populated = await Promise.all(
       trucks.map(async (truck) => {
         let selectedClients = [];
 
+        // ── cas 1 : clientIds normalisés ──
         if (Array.isArray(truck.clientIds) && truck.clientIds.length > 0) {
           const objectIds = truck.clientIds
             .map(id => {
-              try { return new ObjectId(id) } catch { return null }
+              try {
+                // id peut être un string, un ObjectId, ou un objet { $oid: "..." }
+                const raw = id?.$oid ?? id?.toString?.() ?? id
+                return ObjectId.isValid(raw) ? new ObjectId(raw) : null
+              } catch { return null }
             })
-            .filter(Boolean);
+            .filter(Boolean)
 
-          selectedClients = await clientsCol
-            .find({ _id: { $in: objectIds } })
-            .toArray();
+          if (objectIds.length > 0) {
+            selectedClients = await clientsCol
+              .find({ _id: { $in: objectIds } })
+              .toArray()
+          }
+
+        // ── cas 2 : ancien schéma embarqué ──
         } else if (Array.isArray(truck.selectedClients)) {
-          // Compatibilité avec l'ancien schéma (clients embarqués)
-          selectedClients = truck.selectedClients;
+          selectedClients = truck.selectedClients
         }
 
-        return { ...truck, selectedClients };
+        // selectedClients garanti tableau, jamais undefined
+        return { ...truck, selectedClients }
       })
     );
 
