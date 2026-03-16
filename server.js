@@ -110,11 +110,12 @@ app.post('/api/clients/new', async (req, res) => {
 app.get('/api/trucks', async (req, res) => {
   try {
     const trucks = await trucksCol.find({}).toArray();
+console.log("TRUCKS:", trucks);
 
     const populated = await Promise.all(
       trucks.map(async (truck) => {
         let selectedClients = [];
-
+        
         // ── cas 1 : clientIds normalisés ──
         if (Array.isArray(truck.clientIds) && truck.clientIds.length > 0) {
           const objectIds = truck.clientIds
@@ -127,8 +128,8 @@ app.get('/api/trucks', async (req, res) => {
             })
             .filter(Boolean)
 
-          if (objectIds.length > 0) {
-            selectedClients = await clientsCol
+            if (objectIds.length > 0) {
+              selectedClients = await clientsCol
               .find({ _id: { $in: objectIds } })
               .toArray()
           }
@@ -142,7 +143,8 @@ app.get('/api/trucks', async (req, res) => {
         return { ...truck, selectedClients }
       })
     );
-
+    
+    console.log("POPULATED:", populated)
     res.json(populated);
   } catch (err) {
     console.error('Erreur GET /api/trucks :', err);
