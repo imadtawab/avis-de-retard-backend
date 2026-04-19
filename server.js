@@ -33,7 +33,9 @@ mongoose.connect(process.env.DB)
 
 /* ── Nodemailer ── */
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: 'timar-group',
+  host: 'mail.timar-group.com',   // ← à vérifier avec votre admin
+  port: 587,
   auth: {
     user: process.env.MAIL_ADRESSE,
     pass: process.env.MAIL_PASSWORD
