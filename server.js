@@ -33,12 +33,16 @@ mongoose.connect(process.env.DB)
 
 /* ── Nodemailer ── */
 const transporter = nodemailer.createTransport({
-  service: 'timar-group',
-  host: 'mail.timar-group.com',   // ← à vérifier avec votre admin
+  host: 'smtp.office365.com',   // ← à vérifier avec votre admin
   port: 587,
+  secure: false,
   auth: {
     user: process.env.MAIL_ADRESSE,
     pass: process.env.MAIL_PASSWORD
+  },
+  tls: {
+    ciphers: 'SSLv3',
+    rejectUnauthorized: false
   }
 })
 
